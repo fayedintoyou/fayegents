@@ -53,6 +53,8 @@ It helps to think of the system as doing three separate jobs:
 2. Choosing how to execute, which should adapt to how ambiguous, risky and large the task is.
 3. Verifying the result and deciding who can accept it, through repeatable checks plus independent or human sign-off where it matters.
 
+A companion note, [Structured handoffs and approval gates](agent-handoffs-and-gates.md), looks at what these systems actually pass between stages, which transitions need a person, and what the frameworks offer for both.
+
 ## Firm by firm
 
 The tables below cover what each company has described publicly.
@@ -136,7 +138,7 @@ Designs that lean heavily on orchestration, with a state machine coordinating se
 | Design choice | What the leaders do | Assessment |
 | --- | --- | --- |
 | Deterministic steps around agents | Stripe's blueprints, Airbnb's per-file pipeline, Shopify's Roast and Spotify's verifiers all wrap a single agent in fixed steps | Matches the leaders, as long as each task gets one agent |
-| A separate agent session for each stage, passing structured outputs along | Usually one agent writes each task. Where work is split, stages hand over code checked by tests (Stripe, Airbnb) or a single prompt or spec (Spotify's intake agent, Anthropic's planner) | Differs from the common case. Cognition and GitHub both report that handoffs lose context, with subagents redoing work or assuming things the others don't know |
+| A separate agent session for each stage, passing structured outputs along | Usually one agent writes each task. Where work is split, stages hand over code checked by tests (Stripe, Airbnb) or a single prompt or spec (Spotify's intake agent, Anthropic's planner) | Differs from the common case. Cognition and GitHub both report that handoffs lose context, with subagents redoing work or assuming things the others don't know. None of the systems we looked at documents a schema check on what one agent hands the next |
 | SDD frameworks as the entry point | Where teams describe it (OpenAI, Anthropic, Spotify), a short AGENTS.md, plans in the repo, and tests as the definition of done | Differs. Practitioner tests found a large review cost, and no independent study has shown fewer defects |
 | Rules engines deciding whether to pass, retry or escalate | CI, linters and stop hooks inside the loop, with human review at merge. Spotify reportedly dropped its LLM judge, which had become too rigid and blocked valid changes | Most useful at merge, deploy and data access. No leader reports a rules engine between reasoning steps, and OpenAI found that treating agents as rigid state-machine nodes didn't work well |
 | Evidence collected at every step | PR history, CI logs and session transcripts. Shopify's River only works in public Slack channels, so every session leaves a searchable transcript | Same goal. Regulators ask about audit trails, and FINRA recommends logging agent actions, prompts and outputs |
@@ -146,11 +148,11 @@ The research points to these priorities:
 
 1. Build an agent-ready sandbox. Give agents the environment engineers already use, cut off from production and personal credentials, the way Stripe's devboxes and JPMorgan's Devspace are.
 2. Make feedback fast inside the loop, with lint and test results in seconds, a hook that won't let the agent call itself done until checks pass, and a cap on CI rounds.
-3. Put gates at the boundaries. That means human review at merge with separation of duties (at Stripe, the engineer who launched the agent asks a colleague to review), plus tight controls on deploys and data access.
+3. Put gates at the boundaries. That means human review at merge with separation of duties (GitHub blocks the requester from approving Copilot's PRs, and at Stripe the engineer who launched the agent asks a colleague to review), plus tight controls on deploys and data access, tiered by risk. Gates should fail closed, and each approval should be tied to the exact action approved, since a resumed run can repeat it.
 4. Keep context short and in the repo, with AGENTS.md as a map, skills that load on demand, and plans checked in.
 5. Start where pipelines clearly help, with fleet-wide migrations and routine maintenance (Spotify, Airbnb), then move on to background agents for feature work (Ramp, Stripe).
 6. Measure verified outcomes such as review time, human interventions per accepted change, and revert and escaped-defect rates. No leader has published these for agent PRs yet.
-7. Test before mandating anything. Run the same real tasks two ways with the same models and environment, once with a lightweight agent loop and a plan where useful, and once with a prescribed multi-stage workflow. Compare how well each meets the intent, elapsed time and cost, reviewer burden, interventions and post-merge defects, broken down by how ambiguous and risky the tasks are.
+7. Test before mandating anything. Run the same real tasks two ways with the same models and environment, once with a lightweight agent loop and a plan where useful, and once with a prescribed multi-stage workflow. If plan approvals are on the table, add a third run that asks for approval only on risky transitions. At Atlassian's HULA, the one deployment that measured a plan gate, engineers approved 82% of plans but only a quarter of the code generated from them. Compare how well each meets the intent, elapsed time and cost, reviewer burden, interventions and post-merge defects, broken down by how ambiguous and risky the tasks are.
 
 ## Sources
 
