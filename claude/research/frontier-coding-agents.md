@@ -4,13 +4,13 @@
 
 ## Bottom line
 
-The frontier has moved past spec frameworks and orchestration layers to background agents in well-equipped sandboxes, gated by CI and human review.
+The frontier is converging on background agents in well-equipped sandboxes, gated by CI and human review, with orchestration kept to what the work actually needs.
 
-- **Agents already write most of the code at the leaders.** Ramp credits its agent with 74% of merged PRs, Stripe merges 1,300+ agent-written PRs a week, and Anthropic says Claude authors 80%+ of its merged code.
-- **The winning investment is the environment, not orchestration.** That means the same dev environment engineers use, checks that run in seconds, and review at merge.
-- **Multi-agent pipelines are a niche tool.** Even Cognition and Cursor, the most pro-swarm vendors, say one agent should write while others research or review.
-- **Spec frameworks lack evidence.** Every leader writes short plans and uses tests as the definition of done, but none of the firms profiled here runs a spec-driven development (SDD) framework. Studies show added review time and no defect benefit.
-- **Banks are on assistants and isolation.** They have rolled out coding tools to tens of thousands of developers. Their stated controls are sandboxes, spend caps and human review. Regulators ask about permissions, audit trails, oversight and shutdown, not per-step gates.
+- **Agents already produce most of the code at the leaders.** Ramp credits its agent with 74% of merged PRs, Stripe merges 1,300+ agent-written PRs a week, and Anthropic says Claude authors 80%+ of its merged code. These are adoption figures, not outcomes: revert rates, escaped defects and total cost are mostly unpublished.
+- **The winning investment is the environment.** That means the same dev environment engineers use, checks that run in seconds, and review at merge.
+- **The target is no unnecessary orchestration, not no orchestration.** Structure pays off when it preserves intent, handles real uncertainty or coordinates independent work, as Stripe's blueprints and Airbnb's migration pipeline do. It becomes overhead when it formalizes an agent's reasoning steps or hands work from agent to agent. Even Cognition and Cursor, the most pro-swarm vendors, say one agent should write while others research or review.
+- **Heavyweight spec frameworks lack evidence.** Every leader writes short plans and uses tests as the definition of done, but none of the firms profiled here describes running a spec-driven development (SDD) framework. The best studies show added review time without fewer bugs, though specs did help reviewers trace problems back to requirements.
+- **Banks are on assistants and isolation.** They have rolled out coding tools to tens of thousands of developers, with sandboxes, spend caps and human review as their stated controls. Regulators ask about permissions, audit trails, oversight and shutdown, and existing security and change-management obligations still apply.
 
 ## The common pattern
 
@@ -23,11 +23,29 @@ The leaders converge on one shape: one agent per task, running in the same envir
 
 Five principles sit behind that shape:
 
-- **Simple beats orchestrated.** Anthropic advises the [simplest solution that works](https://www.anthropic.com/research/building-effective-agents). Cognition now says multi-agent setups work only when one agent writes and the others research or review. Cursor credits many gains to [removing complexity](https://cursor.com/blog/scaling-agents). Parallelism comes from many independent sessions, one per task, not from agents handing work to each other.
+- **Proportional beats elaborate.** Anthropic advises the [simplest solution that works](https://www.anthropic.com/research/building-effective-agents). Cognition now says multi-agent setups work when one agent writes and the others research or review. Cursor credits many gains to [removing complexity](https://cursor.com/blog/scaling-agents). Parallelism comes from many independent sessions, one per task, not from agents handing work to each other.
 - **Harnesses shrink as models improve.** Anthropic removes harness parts as models get better, Spotify reportedly dropped its LLM judge, and specs help weak models far more than strong ones.
 - **Context is short and lives in the repo.** AGENTS.md acts as a map, rules are scoped by directory (Stripe), and Cloudflare generated AGENTS.md files for about 3,900 repos.
 - **Review is the bottleneck.** OpenAI names human attention, Ramp names judgment, and Spotify has 76% more PRs to review. Investment is shifting to verification: AI reviewers (Uber, Cloudflare, Cursor), hidden verifiers (Spotify) and real-browser checks (Ramp).
 - **Pipelines are for fleets.** State-machine pipelines appear where work is mechanical and checkable, such as Airbnb's test migration and Spotify's Fleet Management. The big multi-agent "swarm" wins were new projects with near-perfect test suites, not existing codebases.
+
+## Orchestration that earns its keep
+
+The pipelines that work keep mechanical steps in code and give one capable agent room where reasoning is needed. In each, a pass/fail check, not another agent, decides when work moves forward.
+
+| Pipeline | Unit of work | Code owns | Agent owns | Gate and cap |
+| --- | --- | --- | --- | --- |
+| [Stripe Minions](https://stripe.dev/blog/minions-stripes-one-shot-end-to-end-coding-agents-part-2) | One task or ticket | Linting, autofixes, git push, CI runs | Implementing the task; fixing CI failures | A local lint loop, then at most two CI rounds before a human takes over |
+| [Airbnb test migration](https://medium.com/airbnb-engineering/accelerating-large-scale-test-migration-with-llms-9565c208023b) | One test file | The step sequence (refactor, Jest, lint, TypeScript), lint autofix, and gathering up to 50 related files as context | Rewriting the file and fixing each step's errors | A file advances only when its step passes; each step has a retry cap, and the hardest files took 50–100 attempts |
+| [Spotify Honk](https://engineering.atspotify.com/2025/12/feedback-loops-background-coding-agents-part-3) | One change in one repo | Targeting repos and opening PRs (Fleet Management); running verifiers | Making the code change | Verifiers hidden behind one tool, plus a stop hook: no PR until they pass |
+
+Airbnb's numbers show why this works for mechanical work. 75% of files passed in the first four-hour run, 97% after four days of tuning on sampled failures, and the last 3% were finished by hand. Its stated lessons favor brute-force retries and picking the right context files over prompt polish.
+
+None of the three passes work from one agent to another through structured handoffs. A useful way to separate the layers:
+
+1. **Intent preservation:** what to build and why, the invariants, and what counts as success (plans, specs, tests).
+2. **Execution strategy:** adaptive, and proportional to the task's ambiguity, risk and scope.
+3. **Verification and authority:** repeatable checks, plus independent or human acceptance where it matters.
 
 ## Firm by firm
 
@@ -55,7 +73,7 @@ Five principles sit behind that shape:
 | GitHub | [Agent HQ](https://github.blog/news-insights/company-news/welcome-home-agents/) runs Copilot, Claude and Codex agents side by side | The Copilot CLI team cut back delegation to subagents and saw 23% fewer tool failures ([Jun 2026](https://github.blog/ai-and-ml/how-we-made-github-copilot-cli-more-selective-about-delegation/)) | Octoverse reports 40%+ of PRs agent-started by Sep 2026, up from 17% in March ([Octoverse](https://github.blog/news-insights/octoverse/octoverse-commits-pushes-reach-new-highs-in-2026-as-developers-build-with-agents/)) |
 | Cognition | Devin. ["Don't Build Multi-Agents"](https://cognition.com/blog/dont-build-multi-agents) (2025), revised in ["Multi-Agents: What's Actually Working"](https://cognition.com/blog/multi-agents-working) (Apr 2026) | Extra agents may research or review, but only one agent writes code | 659 Devin PRs merged internally in one week (Feb 2026) |
 
-These figures aren't directly comparable. "AI-written code" and "PRs written entirely by an agent" measure different things, and no company publishes revert or incident rates for agent PRs.
+These figures measure adoption, not quality, and they aren't directly comparable. "AI-written code" and "PRs written entirely by an agent" measure different things, and no company publishes revert or incident rates for agent PRs.
 
 ## Regulated peers
 
@@ -73,11 +91,11 @@ Big banks have moved AI coding tools from pilots to tens of thousands of develop
 
 No bank publishes how it measures productivity, so the percentages aren't comparable.
 
-**What regulators actually require.** In April 2026, [SR 26-2](https://www.federalreserve.gov/supervisionreg/srletters/sr2602.htm) and [OCC Bulletin 2026-13](https://www.occ.gov/news-issuances/bulletins/2026/bulletin-2026-13.html) replaced SR 11-7 and put generative and agentic AI outside model risk guidance, pending a request for information. In October, the Fed, OCC and FDIC began informally asking banks about agent permissions, audit trails, human oversight and how they would shut agents down ([Reuters](https://kfgo.com/2026/10/13/exclusive-banking-watchdogs-ramp-up-ai-scrutiny-as-stability-fears-mount-sources-say/)). No published guidance asks for controls between agent steps, so AI-written code still runs through ordinary change management: review, testing and separation of duties.
+**What regulators actually require.** In April 2026, [SR 26-2](https://www.federalreserve.gov/supervisionreg/srletters/sr2602.htm) and [OCC Bulletin 2026-13](https://www.occ.gov/news-issuances/bulletins/2026/bulletin-2026-13.html) replaced SR 11-7 and put generative and agentic AI outside model risk guidance, pending a request for information. In October, the Fed, OCC and FDIC began informally asking banks about agent permissions, audit trails, human oversight and how they would shut agents down ([Reuters](https://kfgo.com/2026/10/13/exclusive-banking-watchdogs-ramp-up-ai-scrutiny-as-stability-fears-mount-sources-say/)). No published guidance asks for controls between agent steps. Existing security, access, operational-risk and change-management obligations still apply, so concentrating controls at consequential boundaries (credentials and data access, merge, deploy) is an engineering and risk argument, not a regulatory requirement.
 
 ## Where spec-driven development fits
 
-Writing down intent before an agent codes is mainstream; heavyweight SDD frameworks are not. The measurements so far show they add review time without catching more bugs, and the frameworks themselves are getting lighter.
+Writing down intent before an agent codes is mainstream; mandatory, heavyweight SDD frameworks are not. It helps to separate three things: durable intent and acceptance criteria, lightweight per-task plans or spec deltas, and persona-based multi-stage frameworks like BMAD. The evidence against is strongest for the third, and the frameworks themselves are getting lighter.
 
 | Tool | Approach | Status, Nov 2026 |
 | --- | --- | --- |
@@ -89,11 +107,11 @@ Writing down intent before an agent codes is mainstream; heavyweight SDD framewo
 
 **What the evidence says**
 
-- **Review cost.** In one test, a Spec Kit feature took about 3.5 hours of review and 2,577 lines of Markdown, versus about 24 minutes with plain prompting ([Scott Logic](https://blog.scottlogic.com/2025/11/26/putting-spec-kit-through-its-paces-radical-idea-or-reinvented-waterfall.html)). Another produced 1,300 lines of text for a small date-display feature ([Marmelab](https://marmelab.com/blog/2025/11/12/spec-driven-development-waterfall-strikes-back.html)).
-- **Bug catching.** A spec baseline did not help reviewers find more bugs (recall 0.525 vs. 0.518), and review took 48 vs. 27 minutes. Specs lifted a weak model by about 21 points and a strong one by about 2 ([InfoQ, Sep 2026](https://www.infoq.com/articles/when-spec-driven-development-pays-off/)).
-- **Defects.** A study of 88,052 pull requests found spec artifacts did not reduce defects, though it studied linked tickets rather than SDD tool output ([ESEM 2026](https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.ESEM.2026.84)).
-- **Maintenance.** Of 470,795 spec files across 73,030 public repos, 81.5% have a single commit and 98.3% a single author. Specs get written once, not maintained ([SpecMine, Oct 2026](https://arxiv.org/abs/2608.25202)).
-- **Company results.** Asana tried Spec Kit and OpenSpec, and neither stuck. Its own lightweight skill coincided with 38% more PRs a week among seven heavy users, uncontrolled ([Asana](https://asana.com/inside-asana/spec-driven-development)). No large company has published controlled results from any SDD framework.
+- **Review cost (practitioner tests).** In one test, a Spec Kit feature took about 3.5 hours of review and 2,577 lines of Markdown, versus about 24 minutes with plain prompting ([Scott Logic](https://blog.scottlogic.com/2025/11/26/putting-spec-kit-through-its-paces-radical-idea-or-reinvented-waterfall.html)). Another produced 1,300 lines of text for a small date-display feature ([Marmelab](https://marmelab.com/blog/2025/11/12/spec-driven-development-waterfall-strikes-back.html)).
+- **Bug catching (small study).** A spec baseline did not help reviewers find more bugs (recall 0.525 vs. 0.518), and review took 48 vs. 27 minutes. It did let reviewers trace problems back to requirements (attribution 0.81 vs. 0.00). Specs lifted a weak model by about 21 points and a strong one by about 2 ([InfoQ, Sep 2026](https://www.infoq.com/articles/when-spec-driven-development-pays-off/)).
+- **Defects (independent study).** A study of 88,052 pull requests found spec artifacts did not reduce defects, though it studied linked tickets rather than SDD tool output ([ESEM 2026](https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.ESEM.2026.84)).
+- **Maintenance (independent study).** Of 470,795 spec files across 73,030 public repos, 81.5% have a single commit and 98.3% a single author. Specs get written once, not maintained ([SpecMine, Oct 2026](https://arxiv.org/abs/2608.25202)).
+- **Company results (uncontrolled report).** Asana tried Spec Kit and OpenSpec, and neither stuck. A lighter in-house spec skill did, coinciding with 38% more PRs a week among seven heavy users ([Asana](https://asana.com/inside-asana/spec-driven-development)). That points to conditional value, not universal rejection. No large company has published controlled results from any SDD framework, though that is an absence of public evidence, not proof of non-use.
 - **Analyst view.** Thoughtworks rates Spec Kit and OpenSpec "Assess" but rates [AGENTS.md](https://www.thoughtworks.com/radar/techniques/agents-md) and [Agent Skills](https://www.thoughtworks.com/radar/techniques/agent-skills) "Trial", one ring closer to adoption.
 
 **What leading teams do instead**
@@ -102,18 +120,18 @@ Writing down intent before an agent codes is mainstream; heavyweight SDD framewo
 - **One living plan.** OpenAI's [ExecPlans](https://developers.openai.com/cookbook/articles/codex_exec_plans) are a single self-updating plan document per task. Anthropic's long-running agents track a JSON feature list with pass/fail flags plus a progress file ([Anthropic](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents)).
 - **Tests as the definition of done.** Claude Code's guidance pairs a short CLAUDE.md and plan mode with failing tests the agent must make pass ([Claude Code docs](https://code.claude.com/docs/en/best-practices)). Spotify writes migration prompts as end states verified by tests.
 
-The useful core of SDD, a short plan plus tests that define done, is something every leading team does. The ceremony around it is what the evidence does not support, and its benefit shrinks as models get stronger.
+The useful core of SDD, a short plan plus tests that define done, is something every leading team does. More structure plausibly earns its place in ambiguous or high-consequence work, but that is largely untested too. The evidence does not yet justify mandatory, heavyweight SDD for all work, and the benefit of specs shrinks as models get stronger.
 
 ## Implications for regulated enterprises
 
-Orchestration-heavy designs (a state machine coordinating separate agent sessions behind spec frameworks and rules-engine gates) put controls in the right places at the edges. In the middle they add orchestration the leaders have deliberately avoided.
+Orchestration-heavy designs (a state machine coordinating separate agent sessions behind spec frameworks and rules-engine gates) put controls in the right places at the edges. The target isn't no orchestration; it's no unnecessary orchestration, and handing work between agents in the middle is where these designs part ways with the leaders.
 
 | Design choice | What the leaders do | Verdict |
 | --- | --- | --- |
 | Deterministic steps around agents | Stripe's blueprints, Airbnb's per-file pipeline, Shopify's Roast and Spotify's verifiers all wrap one agent with fixed steps | Aligned, when it wraps one agent per task |
 | Separate agent sessions per stage, passing structured outputs | One agent carries a task end to end, with the full context in its prompt | Diverges: each handoff drops context, and chained instructions drift |
 | SDD frameworks as the front door | A short AGENTS.md, plans in the repo, and tests as the definition of done | Diverges: measured review cost with no measured defect benefit |
-| Rules engines deciding pass, retry or human review | CI, linters and stop hooks inside the loop; human review at merge; Spotify reportedly dropped its LLM judge as models improved | Right at merge, deploy and data access; overhead between steps |
+| Rules engines deciding pass, retry or human review | CI, linters and stop hooks inside the loop; human review at merge; Spotify reportedly dropped its LLM judge as models improved | Most valuable at merge, deploy and data access; between reasoning steps the cost rarely pays back |
 | Evidence at every step | PR history, CI logs and session transcripts; Shopify runs agents only in public Slack channels | Aligned in goal; regulators ask about permissions, audit trails, oversight and shutdown, not per-step artifacts |
 | A central platform driven from a CLI | Background agents started from Slack, tickets or web, running in the same environments engineers use | Partly: a central platform is right, but a CLI-run pipeline keeps a human waiting on it |
 
@@ -124,7 +142,8 @@ Orchestration-heavy designs (a state machine coordinating separate agent session
 3. **Gates at the boundaries.** Human review at merge with separation of duties (Ramp credits each agent PR to the requester), plus tight controls on deploys and data access.
 4. **Short, repo-native context.** AGENTS.md as a map, skills loaded on demand, plans checked into the repo.
 5. **Start where pipelines pay off.** Fleet-wide migrations and toil (Spotify, Airbnb), then background agents for feature work (Ramp, Stripe).
-6. **Measure outcomes.** Track merged PRs, review time and revert rate, which no leader has yet published for agent PRs.
+6. **Measure verified outcomes, not throughput.** Track review time, human interventions per accepted change, and revert and escaped-defect rates, which no leader has yet published for agent PRs.
+7. **Test it before mandating it.** Run the same real tasks with the same models and environment two ways: a lightweight agent loop with a plan when useful, and a prescribed multi-stage workflow. Compare intent satisfaction, elapsed time and cost, reviewer burden, interventions and post-merge defects, split by task ambiguity and risk.
 
 ## Sources
 
