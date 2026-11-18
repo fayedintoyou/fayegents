@@ -82,3 +82,11 @@ Copyright © 2025 Faye Emma
 
 This repository is licensed under the Creative Commons Attribution 4.0
 International License (CC BY 4.0). See `LICENSE.md` for details.
+
+---
+
+## Essays and talks
+
+- [The Evolution of the AI Developer](evolution-of-the-ai-developer.md) — A public, six-slide / ten-minute talk on verification, agent-ready codebases, and the path toward software factories.
+- [Agentic Development: A Vision for Verified, Composable Engineering](agentic-development-vision.md) — A longer-form vision for verified autonomy and composable engineering.
+- [Determinism in Agent Workflows](determinism-in-agent-workflows.md) — Deterministic primitives and enforceable boundaries around adaptive agents.
